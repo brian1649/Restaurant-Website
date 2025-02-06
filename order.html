@@ -1,0 +1,244 @@
+{% extends "baseClient.html" %}
+{% block title %}Restaurant System - Menu{% endblock %}
+
+{% block content %}
+<h1 class="display-4">Our Menu</h1>
+
+<!-- Menu Categories -->
+<div class="container">
+    <div class="row">
+        <!-- Appetizers -->
+        <h2 class="col-12 text-center mt-4">Appetizers</h2>
+        {% for item in menu_items.values() if item['category'] == 'Appetizers' %}
+        <div class="col-md-4 col-sm-6 mb-4">
+            <div class="card shadow-sm">
+                <img src="{{ url_for('static', filename=item['image_url']) }}" class="card-img-top" alt="{{ item['name'] }}" style="height: 200px; object-fit: cover;">
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ item['name'] }}</h5>
+                    <p class="card-text">{{ item['description'] }}</p>
+                    <p class="text-success"><strong>Price:</strong> {{ item['price'] }}</p>
+                    <div class="d-flex justify-content-center align-items-center gap-2">
+                        <input type="number" class="form-control quantity-input" value="1" min="1" style="width: 70px;">
+                        <button class="btn btn-primary add-to-cart" data-id="{{ item['id'] }}">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+
+
+        <!-- Main Courses -->
+        <h2 class="col-12 text-center mt-4">Main Course</h2>
+        {% for item in menu_items.values() if item['category'] == 'Main Courses' %}
+        <div class="col-md-4 col-sm-6 mb-4">
+            <div class="card shadow-sm">
+                <img src="{{ url_for('static', filename=item['image_url']) }}" class="card-img-top" alt="{{ item['name'] }}" style="height: 200px; object-fit: cover;">
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ item['name'] }}</h5>
+                    <p class="card-text">{{ item['description'] }}</p>
+                    <p class="text-success"><strong>Price:</strong> {{ item['price'] }}</p>
+                    <div class="d-flex justify-content-center align-items-center gap-2">
+                        <input type="number" class="form-control quantity-input" value="1" min="1" style="width: 70px;">
+                        <button class="btn btn-primary add-to-cart" data-id="{{ item['id'] }}">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Desserts -->
+        <h2 class="col-12 text-center mt-4">Desserts</h2>
+        {% for item in menu_items.values() if item['category'] == 'Desserts' %}
+        <div class="col-md-4 col-sm-6 mb-4">
+            <div class="card shadow-sm">
+                <img src="{{ url_for('static', filename=item['image_url']) }}" class="card-img-top" alt="{{ item['name'] }}" style="height: 200px; object-fit: cover;">
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ item['name'] }}</h5>
+                    <p class="card-text">{{ item['description'] }}</p>
+                    <p class="text-success"><strong>Price:</strong> {{ item['price'] }}</p>
+                    <div class="d-flex justify-content-center align-items-center gap-2">
+                        <input type="number" class="form-control quantity-input" value="1" min="1" style="width: 70px;">
+                        <button class="btn btn-primary add-to-cart" data-id="{{ item['id'] }}">Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+
+<!-- Cart Section -->
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-body">
+            <h2 class="text-center">Your Cart</h2>
+            <ul id="cart-items" class="list-group mb-3">
+                
+            </ul>
+            <p class="text-center"><strong>Total:</strong> <span id="cart-total">0</span></p>
+            <div class="text-center">
+                <button class="btn btn-success" id="checkout-button">Checkout</button>
+                <button class="btn btn-warning" id="clear-cart">Clear Cart</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const cartItems = {};
+    let cartTotal = 0;
+
+    // Load cart data from localStorage if it exists
+    const savedCart = JSON.parse(localStorage.getItem('cart')) || {};
+    Object.assign(cartItems, savedCart);
+    cartTotal = Object.values(cartItems).reduce((sum, item) => sum + item.totalPrice, 0);
+    updateCart();
+
+    document.querySelectorAll('.add-to-cart').forEach(button => {
+        button.addEventListener('click', function () {
+            const itemId = this.getAttribute('data-id');
+            const menuItem = this.closest('.card');
+            const itemName = menuItem.querySelector('.card-title').innerText;
+            const priceText = menuItem.querySelector('.text-success').innerText.replace('Price:', '').trim();
+            const itemPrice = parseFloat(priceText.replace(/[^0-9.]/g, ''));
+            const quantityInput = menuItem.querySelector('.quantity-input');
+            const quantity = parseInt(quantityInput.value);
+
+            if (!isNaN(itemPrice) && quantity > 0) {
+                if (cartItems[itemName]) {
+                    cartItems[itemName].quantity += quantity;
+                    cartItems[itemName].totalPrice = itemPrice * cartItems[itemName].quantity;
+                } else {
+                    cartItems[itemName] = {
+                        id: itemId,
+                        price: itemPrice,
+                        quantity: quantity,
+                        totalPrice: itemPrice * quantity
+                    };
+                }
+
+                cartTotal = Object.values(cartItems).reduce((sum, item) => sum + item.totalPrice, 0);
+                updateCart();
+                saveCartToLocalStorage();
+            }
+        });
+    });
+
+    function updateCart() {
+        const cartItemsList = document.getElementById('cart-items');
+        const cartTotalElement = document.getElementById('cart-total');
+        cartItemsList.innerHTML = '';
+
+        Object.entries(cartItems).forEach(([itemName, itemData]) => {
+            const li = document.createElement('li');
+            li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+
+            const itemInfo = document.createElement('div');
+            itemInfo.textContent = `${itemName} - $${itemData.price.toFixed(2)}`;
+
+            const quantityInput = document.createElement('input');
+            quantityInput.type = 'number';
+            quantityInput.min = '1';
+            quantityInput.value = itemData.quantity;
+            quantityInput.classList.add('form-control', 'quantity-input');
+            quantityInput.style.width = '70px';
+            quantityInput.addEventListener('change', function () {
+                const newQuantity = parseInt(this.value);
+                if (newQuantity > 0) {
+                    cartItems[itemName].quantity = newQuantity;
+                    cartItems[itemName].totalPrice = itemData.price * newQuantity;
+                    cartTotal = Object.values(cartItems).reduce((sum, item) => sum + item.totalPrice, 0);
+                    updateCart();
+                    saveCartToLocalStorage();
+                }
+            });
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Remove';
+            deleteButton.classList.add('btn', 'btn-danger', 'btn-sm');
+            deleteButton.addEventListener('click', function () {
+                delete cartItems[itemName];
+                cartTotal = Object.values(cartItems).reduce((sum, item) => sum + item.totalPrice, 0);
+                updateCart();
+                saveCartToLocalStorage();
+            });
+
+            li.appendChild(itemInfo);
+            li.appendChild(quantityInput);
+            li.appendChild(deleteButton);
+            cartItemsList.appendChild(li);
+        });
+
+        cartTotalElement.textContent = `$${cartTotal.toFixed(2)}`;
+    }
+
+    function saveCartToLocalStorage() {
+        localStorage.setItem('cart', JSON.stringify(cartItems));
+    }
+
+    document.getElementById('clear-cart').addEventListener('click', function () {
+        Object.keys(cartItems).forEach(key => delete cartItems[key]);
+        cartTotal = 0;
+        updateCart();
+        localStorage.removeItem('cart');
+    });
+
+    document.getElementById('checkout-button').addEventListener('click', function () {
+        if (Object.keys(cartItems).length === 0) {
+            alert('Your cart is empty!');
+            return;
+        }
+
+        const itemsArray = Object.entries(cartItems).map(([name, data]) => ({
+            id: data.id,
+            name: name,
+            price: data.price,
+            quantity: data.quantity,
+            totalPrice: data.totalPrice
+        }));
+
+        fetch('/checkout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                items: itemsArray,
+                total: cartTotal
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Checkout Response:", data);
+
+            if (data.success) {
+                // ✅ Store order details in sessionStorage before redirecting
+                sessionStorage.setItem('order_id', data.order_id);
+                sessionStorage.setItem('order_total', cartTotal);
+
+                // ✅ Clear cart
+                Object.keys(cartItems).forEach(key => delete cartItems[key]);
+                cartTotal = 0;
+                updateCart();
+                localStorage.removeItem('cart');
+
+                // ✅ Redirect to payment page immediately without alert
+                window.location.href = `/payment?order_id=${data.order_id}`;
+            }
+        })
+        .catch(error => {
+            console.error('Checkout Error:', error);
+            alert('Error placing order. Please try again.');
+        });
+    });
+
+});
+</script>
+{% endblock %}

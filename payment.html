@@ -1,0 +1,86 @@
+{% extends "baseClient.html" %}
+
+{% block content %}
+ <style>
+        table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table td {
+    border: none;
+    padding: 8px;
+
+table th {
+    border: none;
+}
+    </style>
+<h1 class="display-4 text-center pt-3"  >Payment</h1>
+
+<div class="d-flex justify-content-center align-items-center vh-100">
+    <div class="card shadow-lg p-4" style="width: 100%; max-width: 500px;">
+        <h2 class="text-center mb-4">Payment Information</h2>
+        <form method="POST" action="{{ url_for('payment') }}" enctype="multipart/form-data">
+
+
+            {{ form.csrf_token }} <!-- CSRF Token for Flask-WTF -->
+
+            <table class="table">
+                <tr>
+                    <td class="form-group">
+                        {{ form.card_name.label }}
+                        {{ form.card_name(class="form-control w-100", id="card_name", placeholder="Enter cardholder name") }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="form-group">
+                        {{ form.card_no.label }}
+                        {{ form.card_no(class="form-control w-100", id="card_no", placeholder="Enter card number") }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="form-group">
+                        {{ form.cvv.label }}
+                        {{ form.cvv(class="form-control w-100", id="cvv", placeholder="Enter CVV") }}
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="form-group">
+                        <div class="row">
+                            <div class="col-md-6">
+                                {{ form.expiration_month.label }}
+                                {{ form.expiration_month(class="form-control w-100", id="expiration_month") }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.year.label }}
+                                {{ form.year(class="form-control w-100", id="expiration_year") }}
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="form-group">
+                        {{ form.delivery_add.label }}
+                        {{ form.delivery_add(class="form-control w-100", id="delivery_add", placeholder="Enter delivery address") }}
+                    </td>
+                </tr>
+                <tr>
+    <td><strong>Total Amount: ${{ total_amount }} </strong></td>
+
+</tr>
+
+                <tr>
+                    <td>
+                        <button type="submit" class="btn btn-primary w-100">Submit</button>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
