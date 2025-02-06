@@ -1,0 +1,23 @@
+{% extends "baseClient.html" %}
+
+{% block content %}
+    <h1 class="display-4 pt-5 text-center">Your reservation is confirmed!</h1>
+
+
+    <div class="d-flex justify-content-center align-items-center vh-100">
+        <div class="card shadow-lg p-4" style="width: 450px;">
+            <h2 class="text-center mb-4">Your Reservation</h2>
+
+            <p><strong>Name:</strong> {{ reservation.get_customer_name() }}</p>
+            <p><strong>Date:</strong>{{ reservation.get_dining_date() }}</p>
+            <p><strong>Time:</strong> {{ reservation.get_time() }}</p>
+            <p><strong>Party Size:</strong> {{ reservation.get_party_size() }}</p>
+            <p><strong>Remarks:</strong>{{ reservation.get_remarks() }}</p>
+
+            <div class="text-center mt-4">
+              <a href="{{ url_for('reservation_home') }}" class="btn btn-secondary">View your reservation history</a>
+
+            </div>
+        </div>
+    </div>
+{% endblock %}

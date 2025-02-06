@@ -1,0 +1,48 @@
+{% extends "baseClient.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-center align-items-center vh-100">
+    <div class="card shadow-lg p-4" style="width: 450px;">
+        <h2 class="text-center mb-4">Reserve a table!</h2>
+        <form method="POST" action="{{ url_for('create_reservation') }}">
+           <div class="form-group">
+       {{ form.customer_name.label }}
+       {{ form.customer_name(class="form-control mb-3") }}
+   </div>
+   <div class="form-group">
+    {{ form.dining_date.label }}
+    {{ form.dining_date(class="form-control mb-3", type="date") }}
+    {% for error in form.dining_date.errors %}
+        <div class="invalid-feedback">{{ error }}</div>
+    {% endfor %}
+</div>
+
+          <script>
+    // JavaScript to set today's date as the minimum selectable date
+    document.addEventListener("DOMContentLoaded", function() {
+        let today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
+        document.getElementById("dining_date").setAttribute("min", today); // Prevent past dates
+    });
+</script>
+
+   <div class="form-group">
+       {{ form.time.label }}
+       {{ form.time(class="form-control mb-3") }}
+   </div>
+   <div class="form-group">
+       {{ form.party_size.label }}
+       {{ form.party_size(class="form-control mb-3") }}
+   </div>
+   <div class="form-group">
+       {{ form.remarks.label }}
+       {{ form.remarks(class="form-control mb-3") }}
+   </div>
+      <div class="text-center">
+   <button type="submit" class="btn btn-primary text-center">Submit</button>
+          </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+

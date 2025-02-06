@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Create Reservation</h2>
+    <form method="POST" id="reservationForm" class="needs-validation" novalidate>
+        {{ form.csrf_token }}
+
+        <div class="mb-3">
+            {{ form.customer_name.label(class="form-label") }}
+            {{ form.customer_name(class="form-control", required=true, minlength="2", maxlength="50", pattern="[A-Za-z ]+") }}
+            <div class="invalid-feedback">Please enter a valid name (2-50 characters, letters only)</div>
+        </div>
+
+        <div class="mb-3">
+            {{ form.dining_date.label(class="form-label") }}
+            {{ form.dining_date(class="form-control", type="date", required=true, min=today) }}
+            <div class="invalid-feedback">Please select a valid future date</div>
+        </div>
+
+        <div class="mb-3">
+            {{ form.time.label(class="form-label") }}
+            {{ form.time(class="form-control", type="time", required=true, min="11:00", max="22:00") }}
+            <div class="invalid-feedback">Please select a time between 11:00 AM and 10:00 PM</div>
+        </div>
+
+        <div class="mb-3">
+            {{ form.party_size.label(class="form-label") }}
+            {{ form.party_size(class="form-control", type="number", required=true, min="1", max="20") }}
+            <div class="invalid-feedback">Party size must be between 1 and 20</div>
+        </div>
+
+        <div class="mb-3">
+            {{ form.remarks.label(class="form-label") }}
+            {{ form.remarks(class="form-control", maxlength="200") }}
+            <div class="invalid-feedback">Remarks cannot exceed 200 characters</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+
+<script>
+document.getElementById('reservationForm').addEventListener('submit', function(event) {
+    if (!this.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    this.classList.add('was-validated');
+});
+</script>
+{% endblock %}

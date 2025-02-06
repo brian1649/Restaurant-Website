@@ -372,24 +372,64 @@ def delete_order(id):
 @app.route('/createReservation', methods=['GET', 'POST'])
 def create_reservation():
     form = CreateReservationForm(request.form)
-    if request.method == 'POST' and form.validate():
+
+    if request.method == 'POST':
+        if form.validate():
+            print("Form validated successfully!")  # Debugging
+        else:
+            print("Form validation failed:", form.errors)  # Debugging
+            return render_template('reservationClient.html', form=form)  # Re-render form if invalid
+
+        # Open database
         db = shelve.open('reservation.db', 'c')
         try:
-            reservations = db['Reservations']
-        except:
+            reservations = db.get('Reservations', {})  # Use .get() to avoid KeyError
+        except Exception as e:
+            print(f"Error opening database: {e}")  # Debugging
             reservations = {}
+
+        # Create and store reservation
         reservation = Reservation(
             customer_name=form.customer_name.data,
             dining_date=form.dining_date.data,
             time=form.time.data,
             party_size=form.party_size.data,
-            remarks=form.remarks.data
+            remarks=form.remarks.data,
+            user_id=session.get('user_id')  # Assuming user_id is stored in session
         )
-        reservations[reservation.get_reservation_id()] = reservation
-        db['Reservations'] = reservations
+
+        reservation_id = str(reservation.get_reservation_id())  # Ensure ID is a string for URL
+        reservations[reservation_id] = reservation
+        db['Reservations'] = reservations  # Save back to database
         db.close()
-        return redirect(url_for('retrieve_reservations'))
-    return render_template('createReservation.html', form=form)
+
+        # Debugging: Print the generated reservation ID
+        print(f"Generated Reservation ID: {reservation_id}")
+
+        # Redirect to confirmation page
+        return redirect(url_for('reservation_confirmation', reservation_id=reservation_id))
+
+    return render_template('reservationClient.html', form=form)
+
+
+
+@app.route('/reservationConfirmation', methods=['GET'])
+def reservation_confirmation():
+    reservation_id = request.args.get('reservation_id')
+    print(f"Reservation ID from URL: {reservation_id}")  # Debugging statement
+
+    db = shelve.open('reservation.db', 'r')
+    reservations = db.get('Reservations', {})
+    reservation = reservations.get(reservation_id)
+    db.close()
+
+    if reservation is None:
+        print("Reservation not found!")  # Debugging statement
+        return "Reservation not found", 404
+
+    print(f"Reservation found: {reservation}")  # Debugging statement
+    return render_template('reservationConfirmation.html', reservation=reservation)
+
 
 @app.route('/retrieveReservations')
 def retrieve_reservations():
@@ -401,11 +441,18 @@ def retrieve_reservations():
 
 @app.route('/updateReservation/<int:id>/', methods=['GET', 'POST'])
 def update_reservation(id):
-    form = CreateReservationForm(request.form)
-    today = date.today().strftime('%Y-%m-%d')
     db = shelve.open('reservation.db', 'w')
-    reservations = db['Reservations']
-    reservation = reservations.get(id)
+    reservations = db.get('Reservations', {})
+
+    # ✅ Convert id to string to match how shelve stores keys
+    reservation = reservations.get(str(id))
+
+    if not reservation:
+        db.close()
+        flash("Reservation not found!", "danger")
+        return redirect(url_for('reservation_home'))
+
+    form = CreateReservationForm(request.form)
 
     if request.method == 'POST' and form.validate():
         reservation.set_customer_name(form.customer_name.data)
@@ -413,27 +460,39 @@ def update_reservation(id):
         reservation.set_time(form.time.data)
         reservation.set_party_size(form.party_size.data)
         reservation.set_remarks(form.remarks.data)
+
         db['Reservations'] = reservations
         db.close()
-        return redirect(url_for('retrieve_reservations'))
+        flash("Reservation updated successfully!", "success")
+        return redirect(url_for('reservation_home'))
 
+    # ✅ Pre-fill the form with existing reservation data
     form.customer_name.data = reservation.get_customer_name()
     form.dining_date.data = reservation.get_dining_date()
     form.time.data = reservation.get_time()
     form.party_size.data = reservation.get_party_size()
     form.remarks.data = reservation.get_remarks()
-    db.close()
 
-    return render_template('updateReservation.html', form=form, today=today)
+    db.close()
+    return render_template('updateReservation.html', form=form)
 
 @app.route('/deleteReservation/<int:id>', methods=['POST'])
 def delete_reservation(id):
     db = shelve.open('reservation.db', 'w')
-    reservations = db['Reservations']
-    reservations.pop(id)
-    db['Reservations'] = reservations
-    db.close()
-    return redirect(url_for('retrieve_reservations'))
+    reservations = db.get('Reservations', {})
+
+    # ✅ Convert id to string for consistency
+    if str(id) in reservations:
+        del reservations[str(id)]
+        db['Reservations'] = reservations
+        db.close()
+        flash("Reservation deleted successfully!", "success")
+    else:
+        db.close()
+        flash("Error: Reservation not found!", "danger")
+
+    return redirect(url_for('reservation_home'))
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register_user():
@@ -619,6 +678,8 @@ def payment():
 
     total_amount = order_data.get('total_price', 0)
 
+
+
     form = PaymentForm(request.form)
 
     if request.method == 'POST' and form.validate():
@@ -651,6 +712,24 @@ def payment():
 def payment_confirmation():
     order_id = request.args.get('order_id')
     return f"Payment confirmed! Your order ID is {order_id}"
+
+
+@app.route('/reservationHome')
+def reservation_home():
+    if 'user_id' not in session:
+        flash("Please log in to view your reservations.", "danger")
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    db = shelve.open('reservation.db', 'r')
+    reservations = db.get('Reservations', {})
+    db.close()
+
+    # Filter reservations to only show the current user's reservations
+    user_reservations = [res for res in reservations.values() if res.get_user_id() == user_id]
+
+    return render_template('reservationHome.html', reservations=user_reservations , current_date=date.today())
+
 
 if __name__ == '__main__':
     app.run(debug=True)

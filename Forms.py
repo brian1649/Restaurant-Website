@@ -48,12 +48,31 @@ class CreateOrderForm(Form):
                                 ('Cancelled', 'Cancelled')],
                         default='Pending')
 
+
 class CreateReservationForm(Form):
-    customer_name = StringField('Customer Name', [validators.Length(min=1, max=150), validators.DataRequired()])
-    dining_date = StringField('Dining Date', [validators.DataRequired()])
-    time = SelectField('Time', choices=[('12:00 PM', '12:00 PM'), ('1:00 PM', '1:00 PM'), ('2:00 PM', '2:00 PM')])
-    party_size = StringField('Party Size', [validators.DataRequired()])
+    customer_name = StringField('Customer Name', [
+        validators.Length(min=1, max=150),
+        validators.DataRequired()
+    ])
+
+    dining_date = DateField('Dining Date', format='%Y-%m-%d', validators=[
+        validators.DataRequired(message="Please enter a valid date.")
+    ])
+
+    time = SelectField('Time', choices=[
+        ('12:00 PM', '12:00 PM'),
+        ('1:00 PM', '1:00 PM'),
+        ('2:00 PM', '2:00 PM')
+    ], validators=[validators.DataRequired()])
+
+    party_size = IntegerField('Party Size', [
+        validators.DataRequired(),
+        validators.NumberRange(min=1, max=20, message="Party size must be between 1 and 20.")
+    ])
+
     remarks = StringField('Remarks', [validators.Optional()])
+
+
 
 class LoginForm(Form):
     username = StringField('Username', [validators.Length(min=4, max=25), validators.DataRequired()])
@@ -84,7 +103,7 @@ class PaymentForm(FlaskForm):
         validators.Length(min=1, max=200)
     ])
 
-    def _init_(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Populate the expiration_month dropdown with months 1-12
         self.expiration_month.choices = [(str(i), datetime(2021, i, 1).strftime('%B')) for i in range(1, 13)]

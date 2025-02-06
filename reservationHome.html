@@ -1,0 +1,52 @@
+{% extends "baseClient.html" %}
+
+{% block content %}
+<h1 class="display-4">Your Reservations</h1>
+
+<div class="container-fluid px-4 mt-4">
+    {% if reservations|length == 0 %}
+        <p class="text-center">You have no reservations yet.</p>
+    {% else %}
+    <div class="table-responsive w-100">
+
+        <table class="table table-striped ">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Customer Name</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Party Size</th>
+                    <th>Remarks</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reservation in reservations %}
+                <tr>
+                    <td>{{ reservation.get_reservation_id() }}</td>
+                    <td>{{ reservation.get_customer_name() }}</td>
+                    <td>{{ reservation.get_dining_date() }}</td>
+                    <td>{{ reservation.get_time() }}</td>
+                    <td>{{ reservation.get_party_size() }}</td>
+                    <td>{{ reservation.get_remarks() }}</td>
+                    <td>
+                        <a href="/updateReservation/{{ reservation.get_reservation_id() }}" class="btn btn-warning btn-sm">Update</a>
+                        <form action="/deleteReservation/{{ reservation.get_reservation_id() }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <div class="text-center mt-4">
+        <a href="{{ url_for('create_reservation') }}" class="btn btn-primary">Make a New Reservation</a>
+    </div>
+</div>
+
+{% endblock %}
+
